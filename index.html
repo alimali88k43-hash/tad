@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimal Calculator</title>
+<meta name="description" content="Lightweight calculator for addition, subtraction, multiplication, division">
+
+<style>
+/* ===== RESET & BASE ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #f2f2f2;
+    color: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 16px;
+}
+
+/* ===== CALCULATOR CONTAINER ===== */
+.calculator {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 360px;
+    padding: 20px;
+}
+
+/* ===== DISPLAY ===== */
+.display {
+    width: 100%;
+    height: 70px;
+    font-size: 2rem;
+    text-align: right;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    background: #fafafa;
+    outline: none;
+}
+
+/* ===== BUTTON GRID ===== */
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+button {
+    height: 60px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 8px;
+    background: #e8e8e8;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+button:hover { background: #dcdcdc; }
+button:active { background: #cccccc; }
+
+/* Operator buttons */
+.operator { background: #007bff; color: #fff; }
+.operator:hover { background: #0069d9; }
+
+/* Equals button */
+.equals { background: #28a745; color: #fff; grid-column: span 2; }
+.equals:hover { background: #218838; }
+
+/* Clear button */
+.clear { background: #dc3545; color: #fff; }
+.clear:hover { background: #c82333; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 400px) {
+    .display { font-size: 1.6rem; height: 60px; }
+    button { height: 50px; font-size: 1.1rem; }
+}
+
+/* ===== ACCESSIBILITY ===== */
+button:focus-visible {
+    outline: 3px solid #007bff;
+    outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<main class="calculator" role="application" aria-label="Basic calculator">
+    <!-- Display: readonly so user cant type invalid chars -->
+    <input type="text" class="display" id="display" readonly aria-label="Calculator display" value="0">
+
+    <!-- Button Grid -->
+    <div class="buttons">
+        <!-- Row 1 -->
+        <button class="clear" onclick="clearDisplay()" aria-label="Clear">C</button>
+        <button onclick="appendValue('/')" class="operator" aria-label="Divide">÷</button>
+        <button onclick="appendValue('*')" class="operator" aria-label="Multiply">×</button>
+        <button onclick="deleteLast()" aria-label="Delete last character">⌫</button>
+
+        <!-- Row 2 -->
+        <button onclick="appendValue('7')">7</button>
+        <button onclick="appendValue('8')">8</button>
+        <button onclick="appendValue('9')">9</button>
+        <button onclick="appendValue('-')" class="operator" aria-label="Subtract">−</button>
+
+        <!-- Row 3 -->
+        <button onclick="appendValue('4')">4</button>
+        <button onclick="appendValue('5')">5</button>
+        <button onclick="appendValue('6')">6</button>
+        <button onclick="appendValue('+')" class="operator" aria-label="Add">+</button>
+
+        <!-- Row 4 -->
+        <button onclick="appendValue('1')">1</button>
+        <button onclick="appendValue('2')">2</button>
+        <button onclick="appendValue('3')">3</button>
+        <button onclick="calculate()" class="equals" aria-label="Equals">=</button>
+
+        <!-- Row 5 -->
+        <button onclick="appendValue('0')" style="grid-column: span 2;">0</button>
+        <button onclick="appendValue('.')">.</button>
+    </div>
+</main>
+
+<script>
+/* ===== CALCULATOR LOGIC ===== */
+const display = document.getElementById('display');
+
+// Add value to display
+function appendValue(val) {
+    if (display.value === '0' && val !== '.') {
+        display.value = val;
+    } else {
+        display.value += val;
+    }
+}
+
+// Clear everything
+function clearDisplay() {
+    display.value = '0';
+}
+
+// Delete last character
+function deleteLast() {
+    display.value = display.value.slice(0, -1);
+    if (display.value === '') display.value = '0';
+}
+
+// Calculate result safely
+function calculate() {
+    try {
+        // Prevent multiple operators like 5++3
+        let expression = display.value.replace(/([+\-*/])\1+/g, '$1');
+        
+        // Use Function instead of eval for slightly better safety
+        let result = Function('"use strict";return (' + expression + ')')();
+        
+        // Handle division by zero and invalid results
+        if (!isFinite(result)) {
+            display.value = 'Error';
+            return;
+        }
+        
+        // Round to avoid floating point issues: 0.1 + 0.2 = 0.3
+        display.value = parseFloat(result.toFixed(10));
+    } catch (error) {
+        display.value = 'Error';
+    }
+}
+
+// Keyboard support for accessibility
+document.addEventListener('keydown', (e) => {
+    if ((e.key >= '0' && e.key <= '9') || ['+', '-', '*', '/', '.', 'Enter', 'Backspace', 'Escape'].includes(e.key)) {
+        e.preventDefault();
+        if (e.key === 'Enter') calculate();
+        else if (e.key === 'Escape') clearDisplay();
+        else if (e.key === 'Backspace') deleteLast();
+        else appendValue(e.key);
+    }
+});
+</script>
+
+</body>
+</html>
